@@ -29,16 +29,25 @@ public class AppUserService implements UserDetailsService {
     }
 
     public String signUpUser(AppUser appUser) {
+        String token = UUID.randomUUID().toString();
+
         boolean userExists = userRepository.findByEmail(appUser.getEmail())
                 .isPresent();
         if (userExists) {
-            throw new IllegalStateException("email already taken");
+            AppUser userByEmail = userRepository.findByEmail(appUser.getEmail()).get();
+            if (userByEmail != null
+                    && userByEmail.getFirstName().equals(appUser.getFirstName())
+                    && userByEmail.getLastName().equals(appUser.getLastName())) {
+                confirmationTokenService.updateConfirmationToken(appUser.getId(), token);
+                return token;
+            } else {
+                throw new IllegalStateException("email already taken");
+            }
         }
 
         String encodedPassword = bCryptPasswordEncoder.encode(appUser.getPassword());
         appUser.setPassword(encodedPassword);
         userRepository.save(appUser);
-        String token = UUID.randomUUID().toString();
 
         ConfirmationToken confirmationToken = new ConfirmationToken(
                 token,
@@ -46,11 +55,10 @@ public class AppUserService implements UserDetailsService {
                 LocalDateTime.now().plusMinutes(15),
                 appUser);
         confirmationTokenService.saveConfirmationToken(confirmationToken);
-// TODO: Send email
         return token;
     }
-
     public int enableAppUser(String email) {
         return userRepository.enableAppUser(email);
     }
+
 }

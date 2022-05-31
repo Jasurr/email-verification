@@ -23,12 +23,19 @@ public class RegistrationService {
     private final EmailSender emailSender;
 
     public String register(RegistrationRequest request) {
+        String token = null;
         boolean isValidaEmail = emailValidator.test(request.getEmail());
         if (!isValidaEmail) {
             throw new IllegalStateException("email not valid");
         }
+        token = getToken(request);
 
-        String token = appUserService.signUpUser(
+        sendConfirmationToEmail(request.getEmail(), request.getFirstName(), token);
+        return token;
+    }
+
+    private String getToken(RegistrationRequest request) {
+        return appUserService.signUpUser(
                 new AppUser(
                         request.getFirstName(),
                         request.getLastName(),
@@ -37,9 +44,13 @@ public class RegistrationService {
                         AppUserRole.USER
                 )
         );
+    }
+
+    private void sendConfirmationToEmail(String email,
+                                         String firstName,
+                                         String token) {
         String link = "http://localhost:4040/api/v1/registration/confirm?token=" + token;
-        emailSender.send(request.getEmail(), buildEmail(request.getFirstName(), link));
-        return token;
+        emailSender.send(email, buildEmail(firstName, link));
     }
 
     @Transactional

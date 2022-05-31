@@ -42,8 +42,8 @@ public class AppUser implements UserDetails {
 
     public AppUser(String firstName,
                    String lastName,
-                   String password,
                    String email,
+                   String password,
                    AppUserRole appUserRole ) {
         this.firstName = firstName;
         this.lastName = lastName;
@@ -79,7 +79,7 @@ public class AppUser implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return locked;
+        return !locked;
     }
 
     @Override
